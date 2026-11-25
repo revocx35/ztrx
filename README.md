@@ -60,6 +60,11 @@ GE-Proton11-14) and DXVK 3.1.1 `dxgi.dll` beside `victory.exe`, on XWayland.
   every indirect execution is dropped.
 - vkd3d-proton older than the November build crashes the NVIDIA shader
   compiler in `vkCreateComputePipelines` at world entry; 3.2.0 does not.
+- `VICTORY_SHADER_LOOP_LIMIT=256` matters more than any other knob here: with the
+  default 2^20 per-lane loop cap the intro cinematic's frames took **5.1 s of GPU
+  time each** (13 draws, 0.2 fps, white screen, audio dropping out in growing
+  gaps because audio is advanced per frame). At 256 the same frames run 33 ms
+  (30 fps, 4.4 ms on the GPU).
 - Result here: first-boot screens and menus at 30 fps, worst frame 2.2 s once
   (the intro), then 30 fps, with a warm shader cache and pipeline library.
   Before the pipeline-library fix below the same run sat at 0.1 fps with 8-22 s
