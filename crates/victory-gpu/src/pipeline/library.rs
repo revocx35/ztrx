@@ -484,7 +484,34 @@ fn open(device: &ID3D12Device1, blob: Blob) -> Option<Library> {
     // The rejected bytes are let go (a mapped file is unmapped) before the
     // empty library is made: nothing reads them any more.
     drop(blob);
-    let library = make(&[]).ok()?;
+    // An empty library is asked for with a null blob: an empty Rust slice has a
+    // dangling, non-null pointer, and vkd3d-proton (Wine) refuses a non-null
+    // blob of length 0 with E_INVALIDARG, so no pipeline was ever kept there
+    // (Marvisak/VIctory#1722).
+    let empty = || -> windows::core::Result<ID3D12PipelineLibrary1> {
+        use windows::core::Interface;
+        let mut out = std::ptr::null_mut();
+        // SAFETY: the method's own arguments; a null blob of length 0 makes an
+        // empty library.
+        unsafe {
+            (Interface::vtable(device).CreatePipelineLibrary)(
+                Interface::as_raw(device),
+                std::ptr::null(),
+                0,
+                &ID3D12PipelineLibrary::IID,
+                &mut out,
+            )
+            .ok()?;
+            ID3D12PipelineLibrary::from_raw(out).cast()
+        }
+    };
+    let library = match empty() {
+        Ok(library) => library,
+        Err(e) => {
+            tracing::info!(error = %e, "empty host pipeline library refused");
+            return None;
+        }
+    };
     Some(Library {
         library,
         _blob: Blob::None,
