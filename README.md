@@ -47,6 +47,24 @@ keyboard acts as one while the game window has focus.
 `VICTORY_RELAY=2`, or `VICTORY_LATE_WAIT=3 VICTORY_WIDE_BACK=1` cut frame
 time on the test machines. Set them in PowerShell before running the script.
 
+## Linux (Wine) on an 8 GB NVIDIA card
+
+Measured on an RTX 3070 Laptop 8 GB, CachyOS, KDE Wayland: wine from
+GE-Proton10-34, vkd3d-proton 3.2.0 (`d3d12.dll`/`d3d12core.dll` from
+GE-Proton11-14) and DXVK 3.1.1 `dxgi.dll` beside `victory.exe`, on XWayland.
+
+- Settings used: `VICTORY_RELAY=2 VICTORY_LATE_WAIT=3 VICTORY_WIDE_BACK=1`
+  `VICTORY_TEXTURE_NO_WAIT=1`.
+- Microsoft's `d3dcompiler_47.dll` in the prefix (`winetricks d3dcompiler_47`):
+  with Wine's built-in one the indirect-argument clamp does not compile and
+  every indirect execution is dropped.
+- vkd3d-proton older than the November build crashes the NVIDIA shader
+  compiler in `vkCreateComputePipelines` at world entry; 3.2.0 does not.
+- Result here: first-boot screens and menus at 30 fps, worst frame 2.2 s once
+  (the intro), then 30 fps, with a warm shader cache and pipeline library.
+  Before the pipeline-library fix below the same run sat at 0.1 fps with 8-22 s
+  frames through the intro.
+
 ## Debugging switches
 
 | Switch | Effect |
